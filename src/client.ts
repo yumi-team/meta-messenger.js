@@ -710,11 +710,39 @@ export class Client extends (EventEmitter as new () => TypedEventEmitter<ClientE
     }
 
     /**
-     * Get E2EE device data as JSON string
+     * Get the current E2EE device data as JSON string
      *
-     * Use this to persist device data externally (e.g., in a database)
+     * This returns the current in-memory E2EE device state, which includes:
+     * - Noise key pair
+     * - Identity key pair
+     * - Signed pre-key
+     * - Registration ID
+     * - All sessions and identities
+     *
+     * Works with all device store modes:
+     * - `e2eeMemoryOnly: true` - Get the ephemeral device data before it's lost
+     * - `deviceData: "..."` - Get the updated state after sessions/keys change
+     * - `devicePath: "..."` - Get current state (also auto-saved to file)
+     *
+     * Use cases:
+     * - Save device data to database instead of file
+     * - Backup device state periodically
+     * - Transfer device state between instances
      *
      * @returns Device data as JSON string
+     * @throws Error if not connected
+     *
+     * @example
+     * ```typescript
+     * // Save to database
+     * const deviceData = client.getDeviceData();
+     * await db.saveDeviceData(userId, deviceData);
+     *
+     * // Load on next startup
+     * const client = new Client(cookies, {
+     *     deviceData: await db.getDeviceData(userId)
+     * });
+     * ```
      */
     getDeviceData(): string {
         if (!this.handle) throw new Error("Not connected");

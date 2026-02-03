@@ -1064,28 +1064,50 @@ Method này chỉ hoạt động với tin nhắn E2EE (mã hóa đầu cuối).
 <a name="getDeviceData"></a>
 ## client.getDeviceData()
 
-Lấy E2EE device data để lưu trữ.
+Lấy dữ liệu E2EE device hiện tại dưới dạng JSON string.
+
+Method này trả về trạng thái E2EE device hiện tại trong bộ nhớ, bao gồm:
+- Noise key pair (cho giao tiếp mã hóa)
+- Identity key pair (cho xác minh danh tính)
+- Signed pre-key (cho thiết lập session)
+- Registration ID
+- Tất cả sessions và identities đã thiết lập với người dùng khác
 
 __Trả về__
 
 string - Device data dưới dạng JSON string
 
-__Lưu ý__
+__Hoạt động với tất cả các chế độ device store__
 
-Lưu device data để tránh phải setup E2EE lại mỗi lần khởi động.
+| Chế độ | Mô tả |
+|------|-------------|
+| `e2eeMemoryOnly: true` | Lấy dữ liệu tạm thời trước khi mất khi ngắt kết nối |
+| `deviceData: "..."` | Lấy trạng thái đã cập nhật sau khi sessions/keys thay đổi |
+| `devicePath: "..."` | Lấy trạng thái hiện tại (cũng tự động lưu vào file) |
+
+__Các trường hợp sử dụng__
+
+- Lưu device data vào database thay vì file
+- Backup trạng thái device định kỳ
+- Chuyển trạng thái device giữa các instance
+- Xuất trạng thái từ memory-only mode trước khi ngắt kết nối
 
 __Ví dụ__
 
 ```typescript
 import { writeFileSync } from 'fs'
 
-// Lưu device data
+// Lưu device data vào file
 const deviceData = client.getDeviceData()
 writeFileSync('device.json', deviceData)
+
+// Hoặc lưu vào database
+await db.saveDeviceData(userId, deviceData)
 
 // Load khi khởi động
 const client = new Client(cookies, {
     deviceData: readFileSync('device.json', 'utf-8')
+    // hoặc: deviceData: await db.getDeviceData(userId)
 })
 ```
 

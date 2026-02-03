@@ -1064,28 +1064,50 @@ This method only works for E2EE (end-to-end encrypted) messages. For regular mes
 <a name="getDeviceData"></a>
 ## client.getDeviceData()
 
-Get E2EE device data for storage.
+Get the current E2EE device data as JSON string.
+
+This returns the current in-memory E2EE device state, which includes:
+- Noise key pair (for encrypted communication)
+- Identity key pair (for identity verification)
+- Signed pre-key (for session establishment)
+- Registration ID
+- All sessions and identities established with other users
 
 __Returns__
 
 string - Device data as JSON string
 
-__Note__
+__Works with all device store modes__
 
-Save device data to avoid setting up E2EE again on each startup.
+| Mode | Description |
+|------|-------------|
+| `e2eeMemoryOnly: true` | Get the ephemeral device data before it's lost on disconnect |
+| `deviceData: "..."` | Get the updated state after sessions/keys change |
+| `devicePath: "..."` | Get current state (also auto-saved to file) |
+
+__Use cases__
+
+- Save device data to database instead of file
+- Backup device state periodically
+- Transfer device state between instances
+- Export state from memory-only mode before disconnect
 
 __Example__
 
 ```typescript
 import { writeFileSync } from 'fs'
 
-// Save device data
+// Save device data to file
 const deviceData = client.getDeviceData()
 writeFileSync('device.json', deviceData)
+
+// Or save to database
+await db.saveDeviceData(userId, deviceData)
 
 // Load on startup
 const client = new Client(cookies, {
     deviceData: readFileSync('device.json', 'utf-8')
+    // or: deviceData: await db.getDeviceData(userId)
 })
 ```
 
